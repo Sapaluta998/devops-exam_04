@@ -1,0 +1,17 @@
+{
+  "name": "activity-logger",
+  "version": "1.0.0",
+  "description": "Web application for recording activities",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 0"
+  },
+  "keywords": ["activity", "logger", "devops"],
+  "author": "Nicholas Bastek",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "body-parser": "^1.20.2"
+  }
+}

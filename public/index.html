@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activity Logger</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      max-width: 600px;
+      width: 100%;
+      padding: 30px;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #333;
+      font-weight: 500;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .activities-list {
+      margin-top: 30px;
+    }
+
+    .activities-list h2 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+
+    .activity-item {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      border-left: 4px solid #667eea;
+    }
+
+    .activity-title {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .activity-description {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+
+    .activity-time {
+      color: #999;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    .delete-btn {
+      background: #ff6b6b;
+      padding: 6px 12px;
+      font-size: 12px;
+      width: auto;
+      margin-top: 8px;
+    }
+
+    .delete-btn:hover {
+      background: #ff5252;
+    }
+
+    .empty-message {
+      text-align: center;
+      color: #999;
+      padding: 20px;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📋 Activity Logger</h1>
+    <p class="subtitle">DevOps Assignment - Activity Recording System</p>
+
+    <form id="activityForm">
+      <div class="form-group">
+        <label for="title">Activity Title *</label>
+        <input type="text" id="title" name="title" required placeholder="Enter activity title">
+      </div>
+
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" name="description" placeholder="Enter activity description"></textarea>
+      </div>
+
+      <button type="submit">Add Activity</button>
+    </form>
+
+    <div class="activities-list">
+      <h2>Recent Activities</h2>
+      <div id="activitiesContainer" class="empty-message">No activities yet</div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = '/api/activities';
+
+    // Load activities on page load
+    async function loadActivities() {
+      try {
+        const response = await fetch(API_URL);
+        const activities = await response.json();
+        displayActivities(activities);
+      } catch (error) {
+        console.error('Error loading activities:', error);
+      }
+    }
+
+    // Display activities
+    function displayActivities(activities) {
+      const container = document.getElementById('activitiesContainer');
+
+      if (activities.length === 0) {
+        container.innerHTML = '<div class="empty-message">No activities yet</div>';
+        return;
+      }
+
+      container.innerHTML = activities
+        .reverse()
+        .map(
+          (activity) => `
+        <div class="activity-item">
+          <div class="activity-title">${escapeHtml(activity.title)}</div>
+          ${activity.description ? `<div class="activity-description">${escapeHtml(activity.description)}</div>` : ''}
+          <div class="activity-time">${new Date(activity.timestamp).toLocaleString()}</div>
+          <button class="delete-btn" onclick="deleteActivity(${activity.id})">Delete</button>
+        </div>
+      `
+        )
+        .join('');
+    }
+
+    // Add activity
+    document.getElementById('activityForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const title = document.getElementById('title').value;
+      const description = document.getElementById('description').value;
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, description })
+        });
+
+        if (response.ok) {
+          document.getElementById('activityForm').reset();
+          loadActivities();
+        }
+      } catch (error) {
+        console.error('Error adding activity:', error);
+      }
+    });
+
+    // Delete activity
+    async function deleteActivity(id) {
+      try {
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+          loadActivities();
+        }
+      } catch (error) {
+        console.error('Error deleting activity:', error);
+      }
+    }
+
+    // Escape HTML
+    function escapeHtml(text) {
+      const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return text.replace(/[&<>"']/g, (m) => map[m]);
+    }
+
+    // Load activities on startup
+    loadActivities();
+  </script>
+</body>
+</html>
